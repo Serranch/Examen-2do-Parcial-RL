@@ -1,43 +1,54 @@
-import numpy as np  #Regresión logística
-import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_breast_cancer
 
-class LogisticRegression():
-
-    def __init__(self) -> None:
+class GradientDescent:
+    
+    def __init__(self):
         pass
     
-    def fit(self, X, y, learning_rate=0.0001, epochs=1000, bias=True):
-        n = int(len(X))  # numero de elementos de x
-        y = np.resize(y, (n, 1))
-        if bias:
-            m = X.shape[1] + 1
-            aux = np.ones((n, 1))
-            X = np.concatenate((X, aux), axis=1)
-        else:
-            m = X.shape[1]
-        thetas = np.zeros((m, 1)) #initial values of thetas
-
-        errores = []
-        iter_ = []
-
-        for i in range(epochs):
-            z = np.dot(X, thetas)
-            h = self.h(z)
-            error = h - y
-            grad = np.dot(X.T, error) / n
-            thetas -= learning_rate * grad
-            iter_.append(i)
-            loss = self.mean_squared_error(y, h)
-            errores.append(loss)
-        print(thetas)
-        return (iter_, errores)
-
-    #Calcula la hipótesis del modelo, que es la función sigmoidal.
-    def h(self, z):
-        return 1 / (1 + np.exp(-z))
-
-    #Calcula la pérdida del modelo utilizando la función de pérdida de la regresión logística
-    def mean_squared_error(self, y, h):
+    def fit(self, X, y, learning_rate=0.01, epochs=1000, bias=True):
         n = len(y)
-        loss = (-1 / n) * np.sum(y * np.log(h) + (1 - y) * np.log(1 - h))
-        return loss
+        y = y.reshape(n, 1)
+        if bias:
+            X = np.hstack((X, np.ones((n, 1))))
+        
+        m = X.shape[1]
+        self.thetas = np.zeros((m, 1))
+        self.costs = []
+        
+        for i in range(epochs):
+            y_pred = X.dot(self.thetas)
+            error = y_pred - y
+            cost = np.sum(error ** 2) / (2 * n)
+            gradient = X.T.dot(error) / n
+            self.thetas = self.thetas - learning_rate * gradient
+            self.costs.append(cost)
+        
+    def predict(self, X):
+        n = X.shape[0]
+        if self.thetas.shape[0] == X.shape[1] + 1:
+            X = np.hstack((X, np.ones((n, 1))))
+        return X.dot(self.thetas)
+    
+    def plot(self):
+        plt.plot(self.costs)
+        plt.xlabel('Iterations')
+        plt.ylabel('Cost')
+        plt.title('Gradient Descent')
+        plt.show()
+
+# Carga de datos
+cancer = load_breast_cancer()
+X = cancer.data
+y = cancer.target.reshape(-1, 1)
+
+# Normalización de datos
+X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+
+# Entrenamiento del modelo
+gd = GradientDescent()
+gd.fit(X, y, learning_rate=0.01, epochs=1000, bias=True)
+
+# Graficación del proceso de optimización
+gd.plot()
